@@ -19,6 +19,16 @@ import (
 	"strconv"
 )
 
+// CodecParams sdp attributes that references a codec, the have the general
+// form of
+//   <Name>:<CodecPT> <Value>
+// and generally need to be placed after the rtpmap statement
+type CodecAttr struct {
+	Name  string
+	Value string
+	Next  *CodecAttr
+}
+
 // Codec describes one of the codec lines in an SDP. This data will be
 // magically filled in if the rtpmap wasn't provided (assuming it's a well
 // known codec having a payload type less than 96.)
@@ -28,6 +38,7 @@ type Codec struct {
 	Rate  int    // frequency in hertz.  usually 8000
 	Param string // sometimes used to specify number of channels
 	Fmtp  string // some extra info; i.e. dtmf might set as "0-16"
+	Attrs *CodecAttr
 }
 
 func (codec *Codec) Append(b *bytes.Buffer) {
@@ -47,6 +58,14 @@ func (codec *Codec) Append(b *bytes.Buffer) {
 		b.WriteString(strconv.FormatInt(int64(codec.PT), 10))
 		b.WriteString(" ")
 		b.WriteString(codec.Fmtp)
+		b.WriteString("\r\n")
+	}
+
+	for attr := codec.Attrs; attr != nil; attr = attr.Next {
+		b.WriteString("a=" + attr.Name + ":")
+		b.WriteString(strconv.FormatInt(int64(codec.PT), 10))
+		b.WriteString(" ")
+		b.WriteString(attr.Value)
 		b.WriteString("\r\n")
 	}
 }
