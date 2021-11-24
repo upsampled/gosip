@@ -1,3 +1,3 @@
-module github.com/upsampled/gosip
+module github.com/jart/gosip
 
 go 1.14
